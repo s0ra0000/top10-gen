@@ -1,13 +1,16 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import html2canvas from "html2canvas";
+import { useState, useRef } from "react";
+// @ts-ignore
+import { useScreenshot } from "use-react-screenshot";
 
 type Item = {
   id: number;
   img: string;
   name: string;
-  score: number;
+  score: number | undefined;
   change: "up" | "down" | "not changed";
   placesChanged: number;
 };
@@ -20,12 +23,19 @@ type Visibility = {
   change: boolean;
 };
 export default function Home() {
+  const imageRef = useRef(null);
+  const [image, takeScreenshot, isLoading, clear] = useScreenshot({
+    ref: imageRef,
+  });
+  const getImage = () => takeScreenshot(imageRef.current);
+
   const [title, setTitle] = useState<string>("");
   const [items, setItems] = useState<Item[]>([]);
+  const [width, setWidth] = useState<string>("800");
   const [newItem, setNewItem] = useState<Omit<Item, "id">>({
     img: "",
     name: "",
-    score: 0,
+    score: undefined,
     change: "not changed",
     placesChanged: 0,
   });
@@ -51,6 +61,8 @@ export default function Home() {
   const handleChangeVisibility = (field: keyof Visibility) => {
     setVisibility((prev) => ({ ...prev, [field]: !prev[field] }));
   };
+
+  const ToCaptureRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <main className="flex min-h-screen w-[1280px] flex-col items-center justify-between p-24">
@@ -111,7 +123,15 @@ export default function Home() {
           Add Item
         </Button>
       </div>
-
+      <div className="w-[400px]">
+        <h3>Customize width:</h3>
+        <Input
+          type="number"
+          value={width}
+          onChange={(e) => setWidth(e.target.value)}
+          className="mb-4"
+        />
+      </div>
       <div className="flex gap-2 mb-4">
         {Object.keys(visibility).map((field) => (
           <label
@@ -129,22 +149,40 @@ export default function Home() {
         ))}
       </div>
 
-      <div className="w-[800px] flex flex-col bg-[#1b1b1b] text-white">
-        <div className="relative flex justify-center items-center h-[80px] text-2xl">
+      <div
+        className="flex flex-col bg-[#1b1b1b] text-white"
+        style={{ width: `${width}px` }}
+        ref={imageRef}
+      >
+        <div className="relative flex justify-center items-center h-[80px] text-2xl font-black">
           <img
             src="logo_circle.png"
             className="w-[60px] h-[60px] absolute left-5"
           />
-          {title}
+          <p>{title}</p>
         </div>
         {items.map((item, index) => (
           <div
             key={item.id}
-            className="w-full flex gap-2 lg:gap-12 flex-row items-center  even:bg-[#2c2c2c] rounded pr-[2px] lg:pr-[10px]"
+            className="w-full flex gap-2 lg:gap-12 flex-row items-center  even:bg-[#2c2c2c] rounded pr-[2px] lg:pr-[10px] my-2"
           >
             <div className="w-10/12 flex items-center">
-              <div className="aspect-square w-[40px] lg:w-[80px] flex-none flex items-center justify-center text-[28px] font-semibold">
-                {visibility.index && <span>{index + 1}</span>}
+              <div className="aspect-square w-[40px] lg:w-[80px] flex-none flex items-center justify-center text-[28px]">
+                {visibility.index && (
+                  <span
+                    className={`${
+                      index === 0
+                        ? "text-[#FFD700] font-black"
+                        : index === 1
+                        ? "text-[#c0c0c0] font-black"
+                        : index === 2
+                        ? "text-[#cd7f32] font-black"
+                        : "text-white"
+                    }`}
+                  >
+                    {index + 1}
+                  </span>
+                )}
               </div>
               <div className="relative w-[40px] flex items-center lg:w-[80px] aspect-square flex-none ">
                 {visibility.img && <img src={item.img} alt={item.name} />}
@@ -172,7 +210,7 @@ export default function Home() {
                     {item.change === "up"
                       ? "+"
                       : item.change === "down"
-                      ? "-"
+                      ? ""
                       : "~"}
                     {item.change !== "not changed" && `${item.placesChanged}`}
                   </span>
@@ -181,7 +219,15 @@ export default function Home() {
             </div>
           </div>
         ))}
+        <div className="text-center mt-2">
+          <p className="font-bold ">www.trendz.mn</p>
+          <p>&#160;</p>
+        </div>
       </div>
+      <button style={{ marginBottom: "10px" }} onClick={getImage}>
+        Take screenshot
+      </button>
+      <img width={width} src={image} alt={"Screenshot"} />
     </main>
   );
 }
